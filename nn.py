@@ -30,4 +30,4 @@ for row in test_file:
     testdata.append(row)
 testdatanp = np.array(testdata)
 y = testdatanp.astype(np.float)
-print y
+print(y)
