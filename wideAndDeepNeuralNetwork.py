@@ -3,6 +3,10 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 import math as math
+
+# set tensorflow verbosity
+tf.logging.set_verbosity(tf.logging.INFO)
+
 # import data using pandas
 pdtrain = pd.read_csv('train.csv')
 pdtest = pd.read_csv('test.csv')
@@ -49,12 +53,14 @@ deep_columns = [PassengerId, Age, Fare,
     tf.contrib.layers.embedding_column(Sex,dimension=8)]
 
 import tempfile
-model_dir = tempfile.mkdtemp()
+model_dir = tempfile.mkdtemp(dir='./')
 model = tf.contrib.learn.DNNLinearCombinedClassifier(
     model_dir = model_dir,
     linear_feature_columns = wide_columns,
     dnn_feature_columns = deep_columns,
-    dnn_hidden_units = [100, 50])
+    dnn_hidden_units = [100, 50]
+    #config = tf.contrib.learn.RunConfig(save_checkpoints_secs=1)
+    )
 
 # define columns
 COLUMNS = ['PassengerId','Pclass','Name','Sex','Age','SibSp', 'Parch', 'Ticket', 'Fare','Cabin','Embarked']
@@ -86,7 +92,36 @@ def train_input_fn():
 def eval_input_fn():
     return input_fn(df_test)
 
-model.fit(input_fn=train_input_fn, steps=50000)
+# monitor
+test_features, test_labels = eval_input_fn()
+MetricSpec = tf.contrib.learn.python.learn.MetricSpec
+validation_metrics = {
+    "accuracy":
+        tf.contrib.learn.metric_spec.MetricSpec(
+            metric_fn=tf.contrib.metrics.streaming_accuracy,
+            prediction_key=tf.contrib.learn.prediction_key.PredictionKey.
+            CLASSES),
+    "precision":
+        tf.contrib.learn.metric_spec.MetricSpec(
+            metric_fn=tf.contrib.metrics.streaming_precision,
+            prediction_key=tf.contrib.learn.prediction_key.PredictionKey.
+            CLASSES),
+    "recall":
+        tf.contrib.learn.metric_spec.MetricSpec(
+            metric_fn=tf.contrib.metrics.streaming_recall,
+            prediction_key=tf.contrib.learn.prediction_key.PredictionKey.
+            CLASSES)
+}
+
+monitor = tf.contrib.learn.monitors.ValidationMonitor(input_fn=eval_input_fn, every_n_steps = 10,
+    metrics=validation_metrics,
+    early_stopping_metric="loss",
+    early_stopping_metric_minimize=True,
+    early_stopping_rounds=200);
+
+model.fit(input_fn=train_input_fn, steps=2000)
 results = model.evaluate(input_fn=eval_input_fn, steps=1)
 for key in sorted(results):
     print "%s: %s" % (key, results[key])
+
+# model.predict()
