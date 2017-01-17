@@ -72,7 +72,7 @@ CONTINUOUS_COLUMNS = ['PassengerId','Age','Fare']
 df_train = pdtrain[:training_set_length]
 df_test = pdtrain[training_set_length:]
 
-def input_fn(df):
+def input_fn(df,predict=False):
     # Creates a dictionary mapping from each continuous feature column name (k) to
     # the values of that column stored in a constant Tensor.
     continuous_cols = {k: tf.constant(df[k].values) for k in CONTINUOUS_COLUMNS}
@@ -82,9 +82,13 @@ def input_fn(df):
     # Merges the two dictionaries into one.
     feature_cols = dict(continuous_cols.items() + categorical_cols.items())
     # Converts the label column into a constant Tensor.
-    label = tf.constant(df[LABEL_COLUMN].values)
     # Returns the feature columns and the label.
-    return feature_cols, label
+    if predict == True:
+        return feature_cols
+    else:
+        label = tf.constant(df[LABEL_COLUMN].values)
+        return feature_cols, label
+
 
 def train_input_fn():
     return input_fn(df_train)
@@ -124,4 +128,13 @@ results = model.evaluate(input_fn=eval_input_fn, steps=1)
 for key in sorted(results):
     print "%s: %s" % (key, results[key])
 
-# model.predict()
+# prediction
+pdpredict = pd.read_csv('test.csv')
+pdpredict.Age = pdtrain.Age.fillna(pdtrain.Age.mean())
+pdpredict.Cabin = pdtrain.Cabin.fillna('')
+pdpredict.Embarked = pdtrain.Embarked.fillna('')
+prediction = tf.contrib.learn.extract_pandas_matrix(pdpredict)
+
+def predict_fn():
+    return input_fn(prediction,True)
+model.predict(input_fn=predict_fn)
