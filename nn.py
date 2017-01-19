@@ -8,14 +8,14 @@ import numpy as np
 TRAINING = 'train_new.csv'
 TEST = 'crossval.csv'
 
-training_set = tf.contrib.learn.datasets.base.load_csv_without_header(
-        filename = TRAINING,
-        target_dtype = np.int,
-        features_dtype = np.float32)
+training_set = tf.contrib.learn.datasets.base.load_csv_without_header
+    filename = TRAINING,
+    target_dtype = np.int,
+    features_dtype = np.float32)
 test_set = tf.contrib.learn.datasets.base.load_csv_without_header(
-        filename = TEST,
-        target_dtype = np.int,
-        features_dtype = np.float32)
+    filename = TEST,
+    target_dtype = np.int,
+    features_dtype = np.float32)
 
 feature_columns = [tf.contrib.layers.real_valued_column("",dimension=8)]
 classifier = tf.contrib.learn.DNNClassifier(feature_columns=feature_columns,hidden_units = [10,20,10], n_classes = 2, model_dir ="./model")
